@@ -1,0 +1,22 @@
+{
+  "basePaths": {
+    "entry": "src",
+    "build": "build"
+  },
+  "outputToSourceDir": true,
+  "excludePaths": [
+    "**/test.ts"
+  ],
+  "filePatterns": {
+    "ts": [
+      "./**/index*.ts"
+    ],
+    "other": [
+      "**/*.js",
+      "**/*.bs",
+      "**/*.html"
+    ]
+  },
+  "work_mode": "custom_web_template",
+  "is_need_deploy": false
+}

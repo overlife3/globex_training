@@ -8,6 +8,9 @@ function isString(value) {
 function selectAll(query) {
     return ArraySelectAll(tools.xquery("sql: " + query + ""));
 }
+function selectOne(query, defaultObj) {
+    return ArrayOptFirstElem(tools.xquery("sql: " + query + ""), defaultObj);
+}
 function log(message, type) {
     type = IsEmptyValue(type) ? "INFO" : StrUpperCase(type);
     if (ObjectType(message) === "JsObject" || ObjectType(message) === "JsArray" || ObjectType(message) === "XmLdsSeq") {
@@ -22,6 +25,17 @@ function map(array, callback) {
         result.push(callback(array[i], i, array));
     }
     return result;
+}
+function find(array, predicate, thisArg) {
+    if (array == null)
+        throw new Error('"this" is null or undefined');
+    var len = ArrayCount(array);
+    for (k = 0; k < len; k++) {
+        value = array[k];
+        if (predicate(value, k, array, thisArg))
+            return value;
+    }
+    return undefined;
 }
 var DEV_MODE = tools_web.is_true(customWebTemplate.access.enable_anonymous_access);
 if (DEV_MODE) {
@@ -69,6 +83,54 @@ function getSubdivisionsByQuery(query) {
         err("getSubdivisionsByQuery", e);
     }
 }
+function getCollaboratorsByQuery(query) {
+    try {
+        var deps = selectAll("\
+			SELECT\
+				s.id,\
+				s.fullname\
+			FROM collaborators s\
+			WHERE s.fullname LIKE '%" + query + "%'\
+		");
+        var result_2 = [];
+        map(deps, function _2(item) { return result_2.push({
+            fullname: RValue(item.fullname),
+            id: RValue(item.id),
+        }); });
+        return result_2;
+    }
+    catch (e) {
+        err("getCollaboratorsByQuery", e);
+    }
+}
+function getCollaboratorData(colId) {
+    try {
+        var data = tools.open_doc(colId).TopElem;
+        var changeLogsArray = ArrayDirect(GetOptObjectProperty(data, "change_logs"));
+        var historyStatesArray = ArrayDirect(GetOptObjectProperty(data, "history_states"));
+        var result_3 = {
+            change_logs: [],
+            history_states: [],
+        };
+        // alert(tools.object_to_text(lists.person_states, "json"));
+        var statesList_1 = ArrayDirect(GetOptObjectProperty(lists.person_states, "person_state"));
+        map(changeLogsArray, function _3(item) { return result_3.change_logs.push({
+            date: RValue(item.date),
+            org_name: RValue(item.org_name),
+            position_name: RValue(item.position_name),
+            position_parent_name: RValue(item.position_parent_name),
+        }); });
+        map(historyStatesArray, function _4(item) { return result_3.history_states.push({
+            finish_date: RValue(item.finish_date),
+            start_date: RValue(item.start_date),
+            state: RValue(GetOptObjectProperty(find(statesList_1, function _5(state) { return RValue(state.id) == RValue(item.state_id); }), "name")),
+        }); });
+        return result_3;
+    }
+    catch (e) {
+        err("getCollaboratorData", e);
+    }
+}
 function getCollaboratorsBySubdivisionId(subId) {
     try {
         var deps = selectAll("\
@@ -78,12 +140,12 @@ function getCollaboratorsBySubdivisionId(subId) {
       FROM collaborators c\
       WHERE c.position_parent_id=" + subId + "\
     ");
-        var result_2 = [];
-        map(deps, function _2(item) { return result_2.push({
+        var result_4 = [];
+        map(deps, function _6(item) { return result_4.push({
             fullname: RValue(item.fullname),
             id: RValue(item.id),
         }); });
-        return result_2;
+        return result_4;
     }
     catch (e) {
         err("getSubdivisionsByQuery", e);
@@ -95,18 +157,35 @@ function handler(bodyAny, method) {
         var body = bodyAny;
         var query = body.GetOptProperty("query");
         if (!isString(query)) {
-            err("route_error", "Отсутствует параметр query в query-params");
+            err("route_error", "Отсутствует параметр query в body");
         }
         response.data = getSubdivisionsByQuery(query);
     }
-    else if (method === "getCollaboratorsBySubdivisionId") {
+    if (method === "getCollaboratorsBySubdivisionId") {
         var body = bodyAny;
-        var subdivisionId = body.GetOptProperty("subdivisionId");
-        var a = OptInt(subdivisionId);
-        if (!isNumber(OptInt(subdivisionId))) {
-            err("route_error", "Отсутствует параметр subdivisionId в query-params");
+        var subdivisionId = OptInt(body.GetOptProperty("subdivisionId"));
+        // const subdivisionId_int = OptInt(subdivisionId_str);
+        if (!isNumber(subdivisionId)) {
+            err("route_error", "Отсутствует параметр subdivisionId в body");
         }
-        response.data = getCollaboratorsBySubdivisionId(a);
+        response.data = getCollaboratorsBySubdivisionId(subdivisionId);
+    }
+    if (method === "getCollaboratorsByQuery") {
+        var body = bodyAny;
+        var query = body.GetOptProperty("query");
+        if (!isString(query)) {
+            err("route_error", "Отсутствует параметр query в body");
+        }
+        response.data = getCollaboratorsByQuery(query);
+    }
+    if (method === "getCollaboratorData") {
+        var body = bodyAny;
+        var colId = OptInt(body.GetOptProperty("collaboratorId"));
+        // const colId_int = OptInt(colId_str);
+        if (!isNumber(colId)) {
+            err("route_error", "Отсутствует параметр collaboratorId в body");
+        }
+        response.data = getCollaboratorData(colId);
     }
     return response;
 }

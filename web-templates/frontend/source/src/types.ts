@@ -1,9 +1,27 @@
 export type Collaborator = {
-  id: number;
+  id: string;
   fullname: string;
 };
 
 export type Subdivision = {
-  id: number;
+  id: string;
   name: string;
+};
+
+export type CollaboratorData = {
+  change_logs: ChangeLog[];
+  history_states: HistoryState[];
+};
+
+export type ChangeLog = {
+  date: string;
+  position_name: string;
+  position_parent_name: string;
+  org_name: string;
+};
+
+export type HistoryState = {
+  start_date: string;
+  finish_date: string;
+  state: string;
 };

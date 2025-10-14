@@ -5,7 +5,7 @@ export type ResponseError = {
 
 export type TypeDTO<T> =
   | {
-      data: T[];
+      data: T;
       success: true;
     }
   | {

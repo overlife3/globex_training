@@ -1,39 +1,40 @@
 import { useEffect, useState } from "react";
-import type { Collaborator } from "../../types";
+import type { CollaboratorData } from "../../types";
+import { getCollaboratorData } from "../../api/getCollaboratorData";
 import CenteredModalWrapper from "../ui/CenteredModalWrapper";
 import styles from "./style.module.css";
-import { getCollaboratorsBySubdivisionId } from "../../api/getCollaboratorsBySubdivisionId";
 import Loader from "../ui/Loader";
-import Row from "./Row";
+import ChangeLogsList from "../ChangeLogsList";
+import HistoryStatesList from "../HistoryStatesList";
 
 type Props = {
-  subdivisionId: string;
-  subdivisionName: string;
+  collaboratorId: string;
+  collaboratorFullname: string;
   onClose: () => void;
   isOpen: boolean;
 };
 
 type State = {
-  data: Collaborator[];
+  data: CollaboratorData | null;
   isLoading: boolean;
   error: unknown | null;
 };
 
 const initialState: State = {
-  data: [],
+  data: null,
   isLoading: false,
   error: null,
 };
 
-const CollaboratorsListModal = (props: Props) => {
-  const { subdivisionId, subdivisionName, isOpen, onClose } = props;
+const CollaboratorDataModal = (props: Props) => {
+  const { collaboratorFullname, collaboratorId, isOpen, onClose } = props;
   const [state, setState] = useState(initialState);
 
   useEffect(() => {
-    const getData = async (subdivisionId: string) => {
+    const getData = async (collaboratorId: string) => {
       try {
         setState((prev) => ({ ...prev, isLoading: true }));
-        const data = await getCollaboratorsBySubdivisionId(subdivisionId);
+        const data = await getCollaboratorData(collaboratorId);
         setState((prev) => ({ ...prev, data, isLoading: false }));
       } catch (error) {
         setState((prev) => ({ ...prev, isLoading: false, error: error }));
@@ -41,16 +42,15 @@ const CollaboratorsListModal = (props: Props) => {
       }
     };
 
-    if (isOpen) getData(subdivisionId);
-  }, [isOpen, subdivisionId]);
-
+    if (isOpen) getData(collaboratorId);
+  }, [isOpen, collaboratorId]);
   return (
     <CenteredModalWrapper isOpen={isOpen} onClose={onClose}>
       <div className={styles.container}>
         <div className={styles.title}>
           <p>
-            Сотрудники подразделения{" "}
-            <span className={styles.sub_name}>{subdivisionName}</span>:
+            Данные сотрудника:{" "}
+            <span className={styles.name}>{collaboratorFullname}</span>:
           </p>
         </div>
         <div className={styles.cross} onClick={onClose}>
@@ -75,17 +75,22 @@ const generateContent = (state: State) => {
     return <div className={styles.error}>Произошла ошибка</div>;
   }
 
-  if (state.data.length === 0) {
-    return <div>В выбранном подразделении нет сотрудников</div>;
+  if (state.data === null) {
+    return <div className={styles.empty}>Нет данных</div>;
   }
 
   return (
-    <div className={styles.list}>
-      {state.data.map((item) => (
-        <Row fullname={item.fullname} key={item.id} />
-      ))}
+    <div className={styles.content}>
+      <div className={styles.table_block}>
+        <p>История измененией:</p>
+        <ChangeLogsList data={state.data.change_logs} />
+      </div>
+      <div className={styles.table_block}>
+        <p>Список состояний</p>
+        <HistoryStatesList data={state.data.history_states} />
+      </div>
     </div>
   );
 };
 
-export default CollaboratorsListModal;
+export default CollaboratorDataModal;

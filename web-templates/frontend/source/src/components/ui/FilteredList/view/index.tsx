@@ -1,15 +1,22 @@
 import styles from "./style.module.css";
-import Loader from "../../ui/Loader";
-import SubdivisionRow from "../../SubdivisionRow";
-import { useSubdivisionsFilteredList } from "../controller";
-import type { Subdivision } from "../../../types";
+import { useFilteredList } from "../controller";
+import type { GetRemoteDataFunc } from "../controller";
+import Loader from "../../Loader";
 
-const SubdivisionsFilteredListView = () => {
-  const { query, handleInputChange, getState } = useSubdivisionsFilteredList();
+type RenderListFunc<T> = (data: T[]) => React.ReactNode;
+
+type Props<T> = {
+  renderList: RenderListFunc<T>;
+  getRemoteData: GetRemoteDataFunc<T>;
+};
+
+function FilteredListView<T>(props: Props<T>) {
+  const { getRemoteData, renderList } = props;
+  const { query, handleInputChange, getState } = useFilteredList(getRemoteData);
 
   const model = getState();
 
-  const subdivisionsList = model.subdivisions;
+  const data = model.data;
   const isLoading = model.isLoading;
   const error = model.error;
 
@@ -24,27 +31,22 @@ const SubdivisionsFilteredListView = () => {
         <div className={styles.loader_container}>{isLoading && <Loader />}</div>
       </div>
 
-      {renderContent(subdivisionsList, error, isLoading)}
+      {renderContent(renderList, data, error, isLoading)}
     </div>
   );
-};
+}
 
 // выбор отображаемого ReactNode в зависимости от количества элементов в массиве и наличия ошибоки.
-function renderContent(
-  data: Subdivision[],
+function renderContent<T>(
+  renderList: RenderListFunc<T>,
+  data: T[],
   error: string | null,
   isLoading: boolean
 ) {
   if (error) return <p className={styles.message}>Ошибка в получении данных</p>;
   if (data.length === 0 && !isLoading)
     return <p className={styles.message}>Ничего не найдено</p>;
-  return (
-    <div className={styles.list}>
-      {data.map((item) => (
-        <SubdivisionRow name={item.name} id={item.id} key={item.id} />
-      ))}
-    </div>
-  );
+  return renderList(data);
 }
 
-export default SubdivisionsFilteredListView;
+export default FilteredListView;

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import CollaboratorsListModal from "../CollaboratorsListModal";
 import styles from "./style.module.css";
+import CollaboratorsListModal from "../../CollaboratorsListModal";
 
 type Props = {
-  id: number;
+  id: string;
   name: string;
 };
 

@@ -1,25 +1,22 @@
 import { BACKEND_URL } from "../config/global";
-import type { Subdivision } from "../types";
+import type { Collaborator } from "../types";
 import type { TypeDTO } from "./type";
 
-//тип данных приходящих с сервера
-
-export const getSubdivisions = async (
-  query: string
-): Promise<Subdivision[]> => {
+export const getCollaboratorsBySubdivisionId = async (
+  subdivisionId: string
+): Promise<Collaborator[]> => {
   const response = await fetch(`${BACKEND_URL}`, {
     method: "POST",
     body: JSON.stringify({
-      query,
-      method: "getSubdivisionsByQuery",
+      method: "getCollaboratorsBySubdivisionId",
+      subdivisionId,
     }),
   });
-
   if (!response.ok) {
     throw new Error(await response.text());
   }
 
-  const data: TypeDTO<Subdivision> = await response.json();
+  const data: TypeDTO<Collaborator[]> = await response.json();
 
   if (!data.success) {
     throw new Error(data.error.message);

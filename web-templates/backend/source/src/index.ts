@@ -3,7 +3,7 @@
 
 import { DEV_MODE } from "./modules/devmode";
 import { log } from "./modules/log";
-import { selectAll } from "./utils/query";
+import { selectAll, selectOne } from "./utils/query";
 import { isNumber, isString } from "./utils/type";
 
 /* --- types --- */
@@ -18,13 +18,44 @@ interface ICollaborator {
   id: XmlElem<number>;
   fullname: XmlElem<string>;
 }
+interface IChangeLogsDTO {
+  date: XmlElem<string>;
+  position_name: XmlElem<string>;
+  position_parent_name: XmlElem<string>;
+  org_name: XmlElem<string>;
+}
+interface IHistoryStatesDTO {
+  start_date: XmlElem<string>;
+  finish_date: XmlElem<string>;
+  state_id: XmlElem<string>;
+}
+interface ICollaboratorData {
+  change_logs: {
+    date: string;
+    position_name: string;
+    position_parent_name: string;
+    org_name: string;
+  }[];
+  history_states: {
+    start_date: string;
+    finish_date: string;
+    state: string;
+  }[];
+}
+
+//"start_date", "finish_date", state_id
 
 interface ISubdivisionByQueryInput {
   query?: string;
 }
-
+interface ICollaboratorByQueryInput {
+  query?: string;
+}
 interface ICollaboratorsBySubdivisionIdInput {
   subdivisionId?: string;
+}
+interface ICollaboratorDataInput {
+  collaboratorId?: string;
 }
 
 /* --- utils --- */
@@ -68,6 +99,80 @@ function getSubdivisionsByQuery(query: string) {
   }
 }
 
+function getCollaboratorsByQuery(query: string) {
+  try {
+    const deps = selectAll<ICollaborator>(`
+			SELECT
+				s.id,
+				s.fullname
+			FROM collaborators s
+			WHERE s.fullname LIKE '%${query}%'
+		`);
+
+    const result: { id: number; fullname: string }[] = [];
+
+    deps.map((item) =>
+      result.push({
+        fullname: RValue(item.fullname),
+        id: RValue(item.id),
+      })
+    );
+
+    return result;
+  } catch (e) {
+    err("getCollaboratorsByQuery", e);
+  }
+}
+
+function getCollaboratorData(colId: number) {
+  try {
+    const data = tools.open_doc(colId).TopElem;
+    const changeLogsArray: IChangeLogsDTO[] = ArrayDirect(
+      GetOptObjectProperty(data, "change_logs") as any[]
+    );
+    const historyStatesArray: IHistoryStatesDTO[] = ArrayDirect(
+      GetOptObjectProperty(data, "history_states") as any[]
+    );
+
+    const result: ICollaboratorData = {
+      change_logs: [],
+      history_states: [],
+    };
+
+    // alert(tools.object_to_text(lists.person_states, "json"));
+
+    const statesList = ArrayDirect(
+      GetOptObjectProperty(lists.person_states, "person_state") as any[]
+    );
+
+    changeLogsArray.map((item) =>
+      result.change_logs.push({
+        date: RValue(item.date),
+        org_name: RValue(item.org_name),
+        position_name: RValue(item.position_name),
+        position_parent_name: RValue(item.position_parent_name),
+      })
+    );
+    historyStatesArray.map((item) =>
+      result.history_states.push({
+        finish_date: RValue(item.finish_date),
+        start_date: RValue(item.start_date),
+        state: RValue(
+          GetOptObjectProperty(
+            statesList.find(
+              (state) => RValue(state.id) == RValue(item.state_id)
+            ),
+            "name"
+          )
+        ),
+      })
+    );
+    return result;
+  } catch (e) {
+    err("getCollaboratorData", e);
+  }
+}
+
 function getCollaboratorsBySubdivisionId(subId: number) {
   try {
     const deps = selectAll<ICollaborator>(`
@@ -100,20 +205,42 @@ function handler(bodyAny: object, method: string) {
     const body: ISubdivisionByQueryInput = bodyAny;
     const query = body.GetOptProperty("query");
     if (!isString(query)) {
-      err("route_error", "Отсутствует параметр query в query-params");
+      err("route_error", "Отсутствует параметр query в body");
     }
 
     response.data = getSubdivisionsByQuery(query);
-  } else if (method === "getCollaboratorsBySubdivisionId") {
-    const body: ICollaboratorsBySubdivisionIdInput = bodyAny;
-    const subdivisionId = body.GetOptProperty("subdivisionId");
-    const a = OptInt(subdivisionId);
+  }
 
-    if (!isNumber(OptInt(subdivisionId))) {
-      err("route_error", "Отсутствует параметр subdivisionId в query-params");
+  if (method === "getCollaboratorsBySubdivisionId") {
+    const body: ICollaboratorsBySubdivisionIdInput = bodyAny;
+    const subdivisionId = OptInt(body.GetOptProperty("subdivisionId"));
+
+    if (!isNumber(subdivisionId)) {
+      err("route_error", "Отсутствует параметр subdivisionId в body");
     }
 
-    response.data = getCollaboratorsBySubdivisionId(a);
+    response.data = getCollaboratorsBySubdivisionId(subdivisionId);
+  }
+
+  if (method === "getCollaboratorsByQuery") {
+    const body: ICollaboratorByQueryInput = bodyAny;
+    const query = body.GetOptProperty("query");
+    if (!isString(query)) {
+      err("route_error", "Отсутствует параметр query в body");
+    }
+
+    response.data = getCollaboratorsByQuery(query);
+  }
+
+  if (method === "getCollaboratorData") {
+    const body: ICollaboratorDataInput = bodyAny;
+    const colId = OptInt(body.GetOptProperty("collaboratorId"));
+
+    if (!isNumber(colId)) {
+      err("route_error", "Отсутствует параметр collaboratorId в body");
+    }
+
+    response.data = getCollaboratorData(colId);
   }
 
   return response;

@@ -1,0 +1,44 @@
+.container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  min-width: 780px;
+  width: auto;
+  border: 1px solid black;
+  font-size: 14px;
+  border-collapse: collapse;
+}
+
+.table .head th {
+  text-align: start;
+  font-size: 16px;
+}
+
+.table th,
+.table td {
+  border-right: 1px solid black;
+  vertical-align: top;
+}
+
+.table th:last-child,
+.table td:last-child {
+  border-right: none;
+}
+
+.col_date {
+  width: 130px;
+}
+
+.col_position_name {
+  width: 270px;
+}
+
+.col_position_parent_name {
+  width: 210px;
+}
+
+.col_org_name {
+  width: 190px;
+}

@@ -1,14 +1,13 @@
-import type { Subdivision } from "../../../types";
 import type { FilteredListByUrlModelState } from "../types";
 
-export class SubdivisionsFilteredListModel {
-  private state: FilteredListByUrlModelState;
+export class FilteredListModel<T> {
+  private state: FilteredListByUrlModelState<T>;
 
   constructor() {
     this.state = {
       query: "",
       isLoading: false,
-      subdivisions: [],
+      data: [],
       error: null,
     };
   }
@@ -33,8 +32,8 @@ export class SubdivisionsFilteredListModel {
     this.state.isLoading = value;
   }
 
-  setSubdivisions(value: Subdivision[]) {
-    this.state.subdivisions = value;
+  setData(value: T[]) {
+    this.state.data = value;
   }
 
   setError(value: string) {

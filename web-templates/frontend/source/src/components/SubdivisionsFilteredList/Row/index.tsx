@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import styles from "./style.module.css";
-import CollaboratorsListModal from "../../CollaboratorsListModal";
+import CenteredModalWrapper from "../../ui/CenteredModalWrapper";
+import CollaboratorsListModalContent from "../../CollaboratorsListModalContent";
 
 type Props = {
   id: string;
   name: string;
 };
 
-const SubdivisionRow = (props: Props) => {
+const SubdivisionRow = memo((props: Props) => {
   const { name, id } = props;
 
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -22,15 +23,18 @@ const SubdivisionRow = (props: Props) => {
       >
         {name}
       </div>
-
-      <CollaboratorsListModal
+      <CenteredModalWrapper
         isOpen={isOpenModal}
         onClose={() => setIsOpenModal(false)}
-        subdivisionId={id}
-        subdivisionName={name}
-      />
+      >
+        <CollaboratorsListModalContent
+          onClose={() => setIsOpenModal(false)}
+          subdivisionId={id}
+          subdivisionName={name}
+        />
+      </CenteredModalWrapper>
     </>
   );
-};
+});
 
 export default SubdivisionRow;

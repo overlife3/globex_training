@@ -1,12 +1,13 @@
-import { useState } from "react";
-import CollaboratorDataModal from "../../CollaboratorDataModal";
+import { memo, useState } from "react";
 import styles from "./style.module.css";
+import CollaboratorDataModalContent from "../../CollaboratorDataModalContent";
+import CenteredModalWrapper from "../../ui/CenteredModalWrapper";
 type Props = {
   collaboratorId: string;
   fullname: string;
 };
 
-const Row = (props: Props) => {
+const Row = memo((props: Props) => {
   const { fullname, collaboratorId } = props;
   const [isOpenModal, setIsOpenModal] = useState(false);
   return (
@@ -19,14 +20,18 @@ const Row = (props: Props) => {
       >
         {fullname}
       </div>
-      <CollaboratorDataModal
-        collaboratorFullname={fullname}
-        collaboratorId={collaboratorId}
+      <CenteredModalWrapper
         isOpen={isOpenModal}
         onClose={() => setIsOpenModal(false)}
-      />
+      >
+        <CollaboratorDataModalContent
+          collaboratorFullname={fullname}
+          collaboratorId={collaboratorId}
+          onClose={() => setIsOpenModal(false)}
+        />
+      </CenteredModalWrapper>
     </>
   );
-};
+});
 
 export default Row;

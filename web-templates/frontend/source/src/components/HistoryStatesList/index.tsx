@@ -6,6 +6,9 @@ type Props = { data: HistoryState[] };
 
 const HistoryStatesList = (props: Props) => {
   const { data } = props;
+
+  if (data.length === 0) return <p className={styles.empty}>Нет данных</p>;
+
   return (
     <div className={styles.container}>
       <table className={styles.table}>
@@ -17,8 +20,8 @@ const HistoryStatesList = (props: Props) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item) => (
-            <tr>
+          {data.map((item, index) => (
+            <tr key={index}>
               <td className={styles.col_start_date}>
                 {formatDateTime(item.start_date)}
               </td>

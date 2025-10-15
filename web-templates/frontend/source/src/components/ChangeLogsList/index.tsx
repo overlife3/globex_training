@@ -9,6 +9,8 @@ type Props = {
 const ChangeLogsList = (props: Props) => {
   const { data } = props;
 
+  if (data.length === 0) return <p className={styles.empty}>Нет данных</p>;
+
   return (
     <div className={styles.container}>
       <table className={styles.table}>
@@ -23,8 +25,8 @@ const ChangeLogsList = (props: Props) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item) => (
-            <tr>
+          {data.map((item, index) => (
+            <tr key={index}>
               <td className={styles.col_date}>{formatDateTime(item.date)}</td>
               <td className={styles.col_position_name}>{item.position_name}</td>
               <td className={styles.col_position_parent_name}>

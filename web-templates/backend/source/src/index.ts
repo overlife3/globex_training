@@ -139,8 +139,6 @@ function getCollaboratorData(colId: number) {
       history_states: [],
     };
 
-    // alert(tools.object_to_text(lists.person_states, "json"));
-
     const statesList = ArrayDirect(
       GetOptObjectProperty(lists.person_states, "person_state") as any[]
     );

@@ -7,11 +7,12 @@ type RenderListFunc<T> = (data: T[]) => React.ReactNode;
 
 type Props<T> = {
   renderList: RenderListFunc<T>;
+  renderEmpty: () => React.ReactNode;
   getRemoteData: GetRemoteDataFunc<T>;
 };
 
 function FilteredListView<T>(props: Props<T>) {
-  const { getRemoteData, renderList } = props;
+  const { getRemoteData, renderList, renderEmpty } = props;
   const { query, handleInputChange, getState } = useFilteredList(getRemoteData);
 
   const model = getState();
@@ -31,7 +32,7 @@ function FilteredListView<T>(props: Props<T>) {
         <div className={styles.loader_container}>{isLoading && <Loader />}</div>
       </div>
 
-      {renderContent(renderList, data, error, isLoading)}
+      {renderContent(renderList, renderEmpty, data, error, isLoading)}
     </div>
   );
 }
@@ -39,13 +40,13 @@ function FilteredListView<T>(props: Props<T>) {
 // выбор отображаемого ReactNode в зависимости от количества элементов в массиве и наличия ошибоки.
 function renderContent<T>(
   renderList: RenderListFunc<T>,
+  renderEmpty: () => React.ReactNode,
   data: T[],
   error: string | null,
   isLoading: boolean
 ) {
   if (error) return <p className={styles.message}>Ошибка в получении данных</p>;
-  if (data.length === 0 && !isLoading)
-    return <p className={styles.message}>Ничего не найдено</p>;
+  if (data.length === 0 && !isLoading) return renderEmpty();
   return renderList(data);
 }
 

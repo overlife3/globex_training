@@ -11,11 +11,16 @@ const CollaboratorsFilteredList = () => {
         return (
           <div className={styles.list}>
             {data.map((item) => (
-              <Row collaboratorId={item.id} fullname={item.fullname} />
+              <Row
+                collaboratorId={item.id}
+                fullname={item.fullname}
+                key={item.id}
+              />
             ))}
           </div>
         );
       }}
+      renderEmpty={() => <p>Список пуст</p>}
     />
   );
 };

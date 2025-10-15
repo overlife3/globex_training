@@ -11,11 +11,12 @@ const SubdivisionsFilteredList = () => {
         return (
           <div className={styles.list}>
             {data.map((item) => (
-              <Row id={item.id} name={item.name} />
+              <Row id={item.id} name={item.name} key={item.id} />
             ))}
           </div>
         );
       }}
+      renderEmpty={() => <p>Список пуст</p>}
     />
   );
 };

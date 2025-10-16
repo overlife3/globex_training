@@ -1,19 +1,23 @@
 import { getSubdivisionsByQuery } from "../../api/getSubdivisionsByQuery";
-import { FilteredList } from "../ui/FilteredList";
+import { FilteredListByQuery } from "../ui/FilteredListByQuery";
+import HierarchicalRows from "../ui/HierarchicalRows";
 import Row from "./Row";
-import styles from "./style.module.css";
 
 const SubdivisionsFilteredList = () => {
   return (
-    <FilteredList
+    <FilteredListByQuery
       getRemoteData={getSubdivisionsByQuery}
       renderList={(data) => {
         return (
-          <div className={styles.list}>
-            {data.map((item) => (
-              <Row id={item.id} name={item.name} key={item.id} />
-            ))}
-          </div>
+          <HierarchicalRows
+            data={data.map((item) => ({
+              id: item.id,
+              label: item.name,
+              parentId: item.parent_object_id,
+              level: item.level,
+            }))}
+            renderRowContent={(item) => <Row id={item.id} name={item.label} />}
+          />
         );
       }}
       renderEmpty={() => <p>Список пуст</p>}

@@ -1,0 +1,28 @@
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.content_container {
+  border-bottom: 1px solid lightgray;
+  flex-grow: 1;
+}
+
+.expand_btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+}
+
+.expand_btn_icon {
+  rotate: -90deg;
+}
+
+.expand_btn_icon.is_expanded {
+  rotate: 0deg;
+}

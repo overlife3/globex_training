@@ -6,6 +6,7 @@ import styles from "./style.module.css";
 import Loader from "../ui/Loader";
 import ChangeLogsList from "../ChangeLogsList";
 import HistoryStatesList from "../HistoryStatesList";
+import Tooltip from "../ui/Tooltip";
 
 type Props = {
   collaboratorId: string;
@@ -52,7 +53,9 @@ const CollaboratorDataModalContent = (props: Props) => {
         </p>
       </div>
       <div className={styles.cross} onClick={onClose}>
-        X
+        <Tooltip content="Закрыть окно" placement="bottom-end">
+          X
+        </Tooltip>
       </div>
       {generateContent(state)}
     </div>

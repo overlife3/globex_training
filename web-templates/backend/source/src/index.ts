@@ -3,8 +3,9 @@
 
 import { DEV_MODE } from "./modules/devmode";
 import { log } from "./modules/log";
+import { getSubdivisionsByQueryAndChild } from "./sql";
 import { selectAll, selectOne } from "./utils/query";
-import { isNumber, isString } from "./utils/type";
+import { isBoolean, isNumber, isObject, isString } from "./utils/type";
 
 /* --- types --- */
 interface IRequestBodyString {
@@ -13,6 +14,8 @@ interface IRequestBodyString {
 interface ISubdivision {
   id: XmlElem<number>;
   name: XmlElem<string>;
+  parent_object_id: XmlElem<number | null>;
+  level: XmlElem<number>;
 }
 interface ICollaborator {
   id: XmlElem<number>;
@@ -42,6 +45,9 @@ interface ICollaboratorData {
     state: string;
   }[];
 }
+interface ISubscription {
+  id: number;
+}
 
 //"start_date", "finish_date", state_id
 
@@ -57,7 +63,20 @@ interface ICollaboratorsBySubdivisionIdInput {
 interface ICollaboratorDataInput {
   collaboratorId?: string;
 }
-
+interface ISubscribeCurUserToCollaboratorInput {
+  collaboratorId?: string;
+}
+interface IDeleteSubscribeCurUserToCollaboratorInput {
+  collaboratorId?: string;
+}
+interface IFilteredCollaboratorsByRule {
+  query: string;
+  position_id: string;
+  is_subscription: boolean;
+}
+interface IGetFilteredCollaboratorsByRuleInput {
+  rule: IFilteredCollaboratorsByRule;
+}
 /* --- utils --- */
 function getParam(name: string, defaultVal: string = "undefined") {
   return tools_web.get_web_param(curParams, name, defaultVal, true, "");
@@ -76,22 +95,23 @@ const DEBUG_MODE = tools_web.is_true(getParam("IS_DEBUG", undefined));
 /* --- logic --- */
 function getSubdivisionsByQuery(query: string) {
   try {
-    const deps = selectAll<ISubdivision>(`
-			SELECT
-				s.id,
-				s.name
-			FROM subdivisions s
-			WHERE s.name LIKE '%${query}%'
-		`);
+    const deps = selectAll<ISubdivision>(getSubdivisionsByQueryAndChild(query));
 
-    const result: { id: number; name: string }[] = [];
+    const result: {
+      id: number;
+      name: string;
+      parent_object_id: number;
+      level: number;
+    }[] = [];
 
-    deps.map((item) =>
+    deps.map((item) => {
       result.push({
         name: RValue(item.name),
         id: RValue(item.id),
-      })
-    );
+        parent_object_id: RValue(item.parent_object_id),
+        level: RValue(item.level),
+      });
+    });
 
     return result;
   } catch (e) {
@@ -99,15 +119,41 @@ function getSubdivisionsByQuery(query: string) {
   }
 }
 
-function getCollaboratorsByQuery(query: string) {
+function getCollaboratorsSQLRule(
+  query: string | undefined,
+  positionParentId: number | undefined
+) {
+  const queryRule = query ? `c.fullname LIKE '%${query}%'` : null;
+  const positionParentIdRule = positionParentId
+    ? `c.position_parent_id = ${positionParentId}`
+    : null;
+
+  const ensureRules = [queryRule, positionParentIdRule].filter(
+    (item) => item !== null
+  );
+  const selectRules = ensureRules.join(" AND ");
+  return selectRules !== "" ? selectRules : null;
+}
+
+function getCollaboratorsByQueryWithoutSubscribe(
+  query: string | undefined,
+  positionParentId: number | undefined
+) {
   try {
+    const selectRules = getCollaboratorsSQLRule(query, positionParentId);
+
+    const str = selectRules ? `${selectRules} AND ` : "";
+
     const deps = selectAll<ICollaborator>(`
-			SELECT
-				s.id,
-				s.fullname
-			FROM collaborators s
-			WHERE s.fullname LIKE '%${query}%'
-		`);
+      SELECT DISTINCT
+        c.id,
+        c.fullname
+      FROM collaborators c
+      LEFT JOIN subscriptions s ON c.id = s.document_id
+      WHERE
+        ${str}
+        s.document_id IS NULL
+    `);
 
     const result: { id: number; fullname: string }[] = [];
 
@@ -120,7 +166,40 @@ function getCollaboratorsByQuery(query: string) {
 
     return result;
   } catch (e) {
-    err("getCollaboratorsByQuery", e);
+    err("getCollaboratorsByQueryWithoutSubscribe", e);
+  }
+}
+
+function getCollaboratorsByQueryWithSubscribe(
+  query: string | undefined,
+  positionParentId: number | undefined
+) {
+  try {
+    const selectRules = getCollaboratorsSQLRule(query, positionParentId);
+
+    const str = selectRules ? `WHERE ${selectRules}` : "";
+
+    const deps = selectAll<ICollaborator>(`
+      SELECT DISTINCT
+        c.id,
+        c.fullname
+      FROM collaborators c
+      INNER JOIN subscriptions s ON c.id = s.document_id
+      ${str}
+    `);
+
+    const result: { id: number; fullname: string }[] = [];
+
+    deps.map((item) =>
+      result.push({
+        fullname: RValue(item.fullname),
+        id: RValue(item.id),
+      })
+    );
+
+    return result;
+  } catch (e) {
+    err("getCollaboratorsByQueryWithSubscribe", e);
   }
 }
 
@@ -196,7 +275,42 @@ function getCollaboratorsBySubdivisionId(subId: number) {
   }
 }
 
-function handler(bodyAny: object, method: string) {
+function subscribeCurUserToCollaborator(colId: number) {
+  try {
+    const new_doc = tools.new_doc_by_name("subscription");
+    new_doc.BindToDb(DefaultDb);
+    const new_doc_te: any = new_doc.TopElem;
+    new_doc_te.document_id = colId;
+    new_doc_te.person_id = curUserId;
+    new_doc.Save();
+  } catch (e) {
+    err("subscribeCurUserToCollaborator", e);
+  }
+}
+
+function deleteSubscribeCurUserToCollaborator(colId: number) {
+  try {
+    const subscription: ISubscription = selectOne(`
+      SELECT 
+        s.id 
+      FROM subscriptions s
+      WHERE s.document_id = ${colId} AND
+        s.type = 'document'
+      `);
+
+    const subscriptionId = RValue(subscription.id);
+
+    if (!isNumber(subscriptionId)) {
+      throw new Error("Подписка не найдена");
+    }
+
+    DeleteDoc(UrlFromDocID(subscriptionId));
+  } catch (e) {
+    err("deleteSubscribeCurUserToCollaborator", e);
+  }
+}
+
+function handler(bodyAny: any, method: string) {
   const response = { success: true, error: false, data: [] as unknown };
 
   if (method === "getSubdivisionsByQuery") {
@@ -220,14 +334,28 @@ function handler(bodyAny: object, method: string) {
     response.data = getCollaboratorsBySubdivisionId(subdivisionId);
   }
 
-  if (method === "getCollaboratorsByQuery") {
-    const body: ICollaboratorByQueryInput = bodyAny;
-    const query = body.GetOptProperty("query");
-    if (!isString(query)) {
-      err("route_error", "Отсутствует параметр query в body");
+  if (method === "getCollaboratorsByRule") {
+    const body: IGetFilteredCollaboratorsByRuleInput = bodyAny;
+    const rule = body.GetOptProperty("rule");
+    if (!isObject(rule)) {
+      err("route_error", "Отсутствует параметр rule в body");
     }
 
-    response.data = getCollaboratorsByQuery(query);
+    if (!isBoolean(rule.is_subscription)) {
+      err("route_error", "Отсутствует правило is_subscription в rule");
+    }
+
+    if (rule.is_subscription) {
+      response.data = getCollaboratorsByQueryWithSubscribe(
+        GetOptObjectProperty(rule, "query"),
+        OptInt(GetOptObjectProperty(rule, "position_parent_id"))
+      );
+    } else {
+      response.data = getCollaboratorsByQueryWithoutSubscribe(
+        GetOptObjectProperty(rule, "query"),
+        OptInt(GetOptObjectProperty(rule, "position_parent_id"))
+      );
+    }
   }
 
   if (method === "getCollaboratorData") {
@@ -239,6 +367,28 @@ function handler(bodyAny: object, method: string) {
     }
 
     response.data = getCollaboratorData(colId);
+  }
+
+  if (method === "subscribeCurUserToCollaborator") {
+    const body: ISubscribeCurUserToCollaboratorInput = bodyAny;
+    const colId = OptInt(body.GetOptProperty("collaboratorId"));
+
+    if (!isNumber(colId)) {
+      err("route_error", "Отсутствует параметр collaboratorId в body");
+    }
+
+    response.data = subscribeCurUserToCollaborator(colId);
+  }
+
+  if (method === "deleteSubscribeCurUserToCollaborator") {
+    const body: IDeleteSubscribeCurUserToCollaboratorInput = bodyAny;
+    const colId = OptInt(body.GetOptProperty("collaboratorId"));
+
+    if (!isNumber(colId)) {
+      err("route_error", "Отсутствует параметр collaboratorId в body");
+    }
+
+    response.data = deleteSubscribeCurUserToCollaborator(colId);
   }
 
   return response;

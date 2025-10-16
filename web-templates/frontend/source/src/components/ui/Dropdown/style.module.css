@@ -1,0 +1,35 @@
+.button {
+  padding: 8px 12px;
+  border: 1px solid #000;
+  background: "#fff";
+  cursor: pointer;
+  min-width: 200px;
+  text-align: left;
+  opacity: 1;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.label {
+  float: right;
+}
+
+.dropdown {
+  background: #fff;
+  border: 1px solid #000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.option {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}

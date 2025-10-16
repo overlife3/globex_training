@@ -2,20 +2,26 @@ import clsx from "clsx";
 import { useStrictContext } from "../../../../react";
 import { TabsContext } from "../context";
 import styles from "./style.module.css";
+import { useLayoutEffect } from "react";
 
 type Props = {
-  value: number;
+  value: string;
   label: string;
 };
 
 const Tab = (props: Props) => {
   const { value, label } = props;
 
-  const { activeTab, setActiveTab } = useStrictContext(TabsContext);
+  const { activeTab, setActiveTab, registerTab } =
+    useStrictContext(TabsContext);
 
   const handleClick = () => {
     setActiveTab(value);
   };
+
+  useLayoutEffect(() => {
+    registerTab(value);
+  }, [value, registerTab]);
 
   return (
     <div

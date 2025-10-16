@@ -8,7 +8,7 @@ type Props = {
   name: string;
 };
 
-const SubdivisionRow = memo((props: Props) => {
+const Row = memo((props: Props) => {
   const { name, id } = props;
 
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -37,4 +37,4 @@ const SubdivisionRow = memo((props: Props) => {
   );
 });
 
-export default SubdivisionRow;
+export default Row;

@@ -1,5 +1,5 @@
 import styles from "./style.module.css";
-import { useFilteredList } from "../controller";
+import { useFilteredListByQuery } from "../controller";
 import type { GetRemoteDataFunc } from "../controller";
 import Loader from "../../Loader";
 
@@ -11,9 +11,10 @@ type Props<T> = {
   getRemoteData: GetRemoteDataFunc<T>;
 };
 
-function FilteredListView<T>(props: Props<T>) {
+function FilteredListByQueryView<T>(props: Props<T>) {
   const { getRemoteData, renderList, renderEmpty } = props;
-  const { query, handleInputChange, getState } = useFilteredList(getRemoteData);
+  const { query, handleInputChange, getState } =
+    useFilteredListByQuery(getRemoteData);
 
   const model = getState();
 
@@ -25,10 +26,11 @@ function FilteredListView<T>(props: Props<T>) {
     <div>
       <div className={styles.input_container}>
         <input
-          placeholder="text"
+          placeholder="Поиск по ФИО"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
         />
+
         <div className={styles.loader_container}>{isLoading && <Loader />}</div>
       </div>
 
@@ -37,7 +39,6 @@ function FilteredListView<T>(props: Props<T>) {
   );
 }
 
-// выбор отображаемого ReactNode в зависимости от количества элементов в массиве и наличия ошибоки.
 function renderContent<T>(
   renderList: RenderListFunc<T>,
   renderEmpty: () => React.ReactNode,
@@ -50,4 +51,4 @@ function renderContent<T>(
   return renderList(data);
 }
 
-export default FilteredListView;
+export default FilteredListByQueryView;

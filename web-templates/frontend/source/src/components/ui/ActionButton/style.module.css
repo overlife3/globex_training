@@ -1,0 +1,22 @@
+.button {
+  display: flex;
+  align-items: center;
+  padding: 5px 5px 5px 25px;
+}
+
+.label {
+  flex-grow: 1;
+}
+
+.state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 20px;
+}
+
+.success {
+  font-size: 16px;
+}

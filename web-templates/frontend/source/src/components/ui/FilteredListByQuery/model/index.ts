@@ -1,6 +1,6 @@
 import type { FilteredListByUrlModelState } from "../types";
 
-export class FilteredListModel<T> {
+export class FilteredListByQueryModel<T> {
   private state: FilteredListByUrlModelState<T>;
 
   constructor() {

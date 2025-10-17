@@ -1,5 +1,5 @@
 import styles from "./style.module.css";
-import { useFilteredList } from "../controller";
+import { useFilteredListByQuery } from "../controller";
 import type { GetRemoteDataFunc } from "../controller";
 import Loader from "../../Loader";
 
@@ -7,12 +7,14 @@ type RenderListFunc<T> = (data: T[]) => React.ReactNode;
 
 type Props<T> = {
   renderList: RenderListFunc<T>;
+  renderEmpty: () => React.ReactNode;
   getRemoteData: GetRemoteDataFunc<T>;
 };
 
-function FilteredListView<T>(props: Props<T>) {
-  const { getRemoteData, renderList } = props;
-  const { query, handleInputChange, getState } = useFilteredList(getRemoteData);
+function FilteredListByQueryView<T>(props: Props<T>) {
+  const { getRemoteData, renderList, renderEmpty } = props;
+  const { query, handleInputChange, getState } =
+    useFilteredListByQuery(getRemoteData);
 
   const model = getState();
 
@@ -24,29 +26,29 @@ function FilteredListView<T>(props: Props<T>) {
     <div>
       <div className={styles.input_container}>
         <input
-          placeholder="text"
+          placeholder="Поиск по ФИО"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
         />
+
         <div className={styles.loader_container}>{isLoading && <Loader />}</div>
       </div>
 
-      {renderContent(renderList, data, error, isLoading)}
+      {renderContent(renderList, renderEmpty, data, error, isLoading)}
     </div>
   );
 }
 
-// выбор отображаемого ReactNode в зависимости от количества элементов в массиве и наличия ошибоки.
 function renderContent<T>(
   renderList: RenderListFunc<T>,
+  renderEmpty: () => React.ReactNode,
   data: T[],
   error: string | null,
   isLoading: boolean
 ) {
   if (error) return <p className={styles.message}>Ошибка в получении данных</p>;
-  if (data.length === 0 && !isLoading)
-    return <p className={styles.message}>Ничего не найдено</p>;
+  if (data.length === 0 && !isLoading) return renderEmpty();
   return renderList(data);
 }
 
-export default FilteredListView;
+export default FilteredListByQueryView;

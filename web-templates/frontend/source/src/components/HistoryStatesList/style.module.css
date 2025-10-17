@@ -33,3 +33,6 @@
 .col_state {
   width: 200px;
 }
+.empty {
+  margin-top: 0px;
+}

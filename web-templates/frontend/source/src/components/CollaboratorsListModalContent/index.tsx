@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Collaborator } from "../../types";
-import CenteredModalWrapper from "../ui/CenteredModalWrapper";
 import styles from "./style.module.css";
 import { getCollaboratorsBySubdivisionId } from "../../api/getCollaboratorsBySubdivisionId";
 import Loader from "../ui/Loader";
@@ -10,7 +9,6 @@ type Props = {
   subdivisionId: string;
   subdivisionName: string;
   onClose: () => void;
-  isOpen: boolean;
 };
 
 type State = {
@@ -25,8 +23,8 @@ const initialState: State = {
   error: null,
 };
 
-const CollaboratorsListModal = (props: Props) => {
-  const { subdivisionId, subdivisionName, isOpen, onClose } = props;
+const CollaboratorsListModalContent = (props: Props) => {
+  const { subdivisionId, subdivisionName, onClose } = props;
   const [state, setState] = useState(initialState);
 
   useEffect(() => {
@@ -41,24 +39,22 @@ const CollaboratorsListModal = (props: Props) => {
       }
     };
 
-    if (isOpen) getData(subdivisionId);
-  }, [isOpen, subdivisionId]);
+    getData(subdivisionId);
+  }, [subdivisionId]);
 
   return (
-    <CenteredModalWrapper isOpen={isOpen} onClose={onClose}>
-      <div className={styles.container}>
-        <div className={styles.title}>
-          <p>
-            Сотрудники подразделения{" "}
-            <span className={styles.sub_name}>{subdivisionName}</span>:
-          </p>
-        </div>
-        <div className={styles.cross} onClick={onClose}>
-          X
-        </div>
-        {generateContent(state)}
+    <div className={styles.container}>
+      <div className={styles.title}>
+        <p>
+          Сотрудники подразделения{" "}
+          <span className={styles.sub_name}>{subdivisionName}</span>:
+        </p>
       </div>
-    </CenteredModalWrapper>
+      <div className={styles.cross} onClick={onClose}>
+        X
+      </div>
+      {generateContent(state)}
+    </div>
   );
 };
 
@@ -88,4 +84,4 @@ const generateContent = (state: State) => {
   );
 };
 
-export default CollaboratorsListModal;
+export default CollaboratorsListModalContent;

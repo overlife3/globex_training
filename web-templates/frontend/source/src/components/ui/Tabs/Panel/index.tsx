@@ -3,7 +3,7 @@ import { TabsContext } from "../context";
 import styles from "./style.module.css";
 
 type Props = {
-  value: number;
+  value: string;
   children: React.ReactNode;
 };
 

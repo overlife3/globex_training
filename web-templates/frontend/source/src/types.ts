@@ -6,6 +6,11 @@ export type Collaborator = {
 export type Subdivision = {
   id: string;
   name: string;
+  parent_object_id: string | null;
+};
+
+export type SubdivisionWithHierarchical = Subdivision & {
+  level: number;
 };
 
 export type CollaboratorData = {

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { FilteredListModel } from "../model";
+import { FilteredListByQueryModel } from "../model";
 import { useDebounce } from "../../../../hooks";
 
 export type GetRemoteDataFunc<T> = (query: string) => Promise<T[]>;
 
-export const useFilteredList = <T>(getRemoteData: GetRemoteDataFunc<T>) => {
-  const [model] = useState(new FilteredListModel<T>());
+export const useFilteredListByQuery = <T>(
+  getRemoteData: GetRemoteDataFunc<T>
+) => {
+  const [model] = useState(new FilteredListByQueryModel<T>());
   const [, setRerender] = useState({});
 
   const update = () => setRerender({});

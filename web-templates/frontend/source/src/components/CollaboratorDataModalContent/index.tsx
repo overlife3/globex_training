@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import type { CollaboratorData } from "../../types";
 import { getCollaboratorData } from "../../api/getCollaboratorData";
-import CenteredModalWrapper from "../ui/CenteredModalWrapper";
+
 import styles from "./style.module.css";
 import Loader from "../ui/Loader";
 import ChangeLogsList from "../ChangeLogsList";
 import HistoryStatesList from "../HistoryStatesList";
+import Tooltip from "../ui/Tooltip";
 
 type Props = {
   collaboratorId: string;
   collaboratorFullname: string;
   onClose: () => void;
-  isOpen: boolean;
 };
 
 type State = {
@@ -26,8 +26,8 @@ const initialState: State = {
   error: null,
 };
 
-const CollaboratorDataModal = (props: Props) => {
-  const { collaboratorFullname, collaboratorId, isOpen, onClose } = props;
+const CollaboratorDataModalContent = (props: Props) => {
+  const { collaboratorFullname, collaboratorId, onClose } = props;
   const [state, setState] = useState(initialState);
 
   useEffect(() => {
@@ -42,23 +42,23 @@ const CollaboratorDataModal = (props: Props) => {
       }
     };
 
-    if (isOpen) getData(collaboratorId);
-  }, [isOpen, collaboratorId]);
+    getData(collaboratorId);
+  }, [collaboratorId]);
   return (
-    <CenteredModalWrapper isOpen={isOpen} onClose={onClose}>
-      <div className={styles.container}>
-        <div className={styles.title}>
-          <p>
-            Данные сотрудника:{" "}
-            <span className={styles.name}>{collaboratorFullname}</span>:
-          </p>
-        </div>
-        <div className={styles.cross} onClick={onClose}>
-          X
-        </div>
-        {generateContent(state)}
+    <div className={styles.container}>
+      <div className={styles.title}>
+        <p>
+          Данные сотрудника:{" "}
+          <span className={styles.name}>{collaboratorFullname}</span>:
+        </p>
       </div>
-    </CenteredModalWrapper>
+      <div className={styles.cross} onClick={onClose}>
+        <Tooltip content="Закрыть окно" placement="bottom-end">
+          X
+        </Tooltip>
+      </div>
+      {generateContent(state)}
+    </div>
   );
 };
 
@@ -86,11 +86,11 @@ const generateContent = (state: State) => {
         <ChangeLogsList data={state.data.change_logs} />
       </div>
       <div className={styles.table_block}>
-        <p>Список состояний</p>
+        <p>Список состояний:</p>
         <HistoryStatesList data={state.data.history_states} />
       </div>
     </div>
   );
 };
 
-export default CollaboratorDataModal;
+export default CollaboratorDataModalContent;

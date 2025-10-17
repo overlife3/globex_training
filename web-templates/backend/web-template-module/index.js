@@ -1,6 +1,12 @@
 ﻿<%
+function isBoolean(value) {
+    return DataType(value) == "bool";
+}
 function isNumber(value) {
     return DataType(value) == "integer";
+}
+function isObject(value) {
+    return DataType(value) == "object" && ObjectType(value) == "JsObject";
 }
 function isString(value) {
     return DataType(value) == "string";
@@ -11,6 +17,36 @@ function selectAll(query) {
 function selectOne(query, defaultObj) {
     return ArrayOptFirstElem(tools.xquery("sql: " + query + ""), defaultObj);
 }
+getSubdivisionsByQueryAndChild = function _1(query) { return "\
+WITH subdivision_hierarchy AS (\
+    -- Базовый случай: находим все подразделения с указанной подстрокой\
+    SELECT \
+        id,\
+        name,\
+        parent_object_id,\
+        0 as level\
+    FROM subdivisions \
+    WHERE name LIKE '%" + query + "%'  -- ЗАМЕНИТЕ на вашу подстроку\
+    \
+    UNION ALL\
+    \
+    -- Рекурсивный случай: находим всех потомков\
+    SELECT \
+        child.id,\
+        child.name,\
+        child.parent_object_id,\
+        parent.level + 1 as level\
+    FROM subdivisions child\
+     INNER JOIN subdivision_hierarchy parent ON child.parent_object_id = parent.id\
+)\
+SELECT DISTINCT\
+    id,\
+    name, \
+    parent_object_id,\
+    level\
+FROM subdivision_hierarchy\
+ORDER BY \
+    name"; };
 function log(message, type) {
     type = IsEmptyValue(type) ? "INFO" : StrUpperCase(type);
     if (ObjectType(message) === "JsObject" || ObjectType(message) === "JsArray" || ObjectType(message) === "XmLdsSeq") {
@@ -23,6 +59,15 @@ function map(array, callback) {
     var result = [];
     for (i = 0; i < ArrayCount(array); i++) {
         result.push(callback(array[i], i, array));
+    }
+    return result;
+}
+function filter(array, predicate) {
+    var result = [];
+    for (i = 0; i < ArrayCount(array); i++) {
+        if (predicate(array[i], i, array)) {
+            result.push(array[i]);
+        }
     }
     return result;
 }
@@ -65,42 +110,76 @@ var DEBUG_MODE = tools_web.is_true(getParam("IS_DEBUG", undefined));
 /* --- logic --- */
 function getSubdivisionsByQuery(query) {
     try {
-        var deps = selectAll("\
-			SELECT\
-				s.id,\
-				s.name\
-			FROM subdivisions s\
-			WHERE s.name LIKE '%" + query + "%'\
-		");
+        var deps = selectAll(getSubdivisionsByQueryAndChild(query));
         var result_1 = [];
-        map(deps, function _1(item) { return result_1.push({
-            name: RValue(item.name),
-            id: RValue(item.id),
-        }); });
+        map(deps, function _2(item) {
+            result_1.push({
+                name: RValue(item.name),
+                id: RValue(item.id),
+                parent_object_id: RValue(item.parent_object_id),
+                level: RValue(item.level),
+            });
+        });
         return result_1;
     }
     catch (e) {
         err("getSubdivisionsByQuery", e);
     }
 }
-function getCollaboratorsByQuery(query) {
+function getCollaboratorsSQLRule(query, positionParentId) {
+    var queryRule = query ? "c.fullname LIKE '%" + query + "%'" : null;
+    var positionParentIdRule = positionParentId
+        ? "c.position_parent_id = " + positionParentId + "" : null;
+    var ensureRules = filter([queryRule, positionParentIdRule], function _3(item) { return item !== null; });
+    var selectRules = ensureRules.join(" AND ");
+    return selectRules !== "" ? selectRules : null;
+}
+function getCollaboratorsByQueryWithoutSubscribe(query, positionParentId) {
     try {
+        var selectRules = getCollaboratorsSQLRule(query, positionParentId);
+        var str = selectRules ? "" + selectRules + " AND " : "";
         var deps = selectAll("\
-			SELECT\
-				s.id,\
-				s.fullname\
-			FROM collaborators s\
-			WHERE s.fullname LIKE '%" + query + "%'\
-		");
+      SELECT DISTINCT\
+        c.id,\
+        c.fullname\
+      FROM collaborators c\
+      LEFT JOIN subscriptions s ON c.id = s.document_id\
+      WHERE\
+        " + str + "\
+        s.document_id IS NULL\
+    ");
         var result_2 = [];
-        map(deps, function _2(item) { return result_2.push({
+        map(deps, function _4(item) { return result_2.push({
             fullname: RValue(item.fullname),
             id: RValue(item.id),
         }); });
         return result_2;
     }
     catch (e) {
-        err("getCollaboratorsByQuery", e);
+        err("getCollaboratorsByQueryWithoutSubscribe", e);
+    }
+}
+function getCollaboratorsByQueryWithSubscribe(query, positionParentId) {
+    try {
+        var selectRules = getCollaboratorsSQLRule(query, positionParentId);
+        var str = selectRules ? "WHERE " + selectRules + "" : "";
+        var deps = selectAll("\
+      SELECT DISTINCT\
+        c.id,\
+        c.fullname\
+      FROM collaborators c\
+      INNER JOIN subscriptions s ON c.id = s.document_id\
+      " + str + "\
+    ");
+        var result_3 = [];
+        map(deps, function _5(item) { return result_3.push({
+            fullname: RValue(item.fullname),
+            id: RValue(item.id),
+        }); });
+        return result_3;
+    }
+    catch (e) {
+        err("getCollaboratorsByQueryWithSubscribe", e);
     }
 }
 function getCollaboratorData(colId) {
@@ -108,24 +187,23 @@ function getCollaboratorData(colId) {
         var data = tools.open_doc(colId).TopElem;
         var changeLogsArray = ArrayDirect(GetOptObjectProperty(data, "change_logs"));
         var historyStatesArray = ArrayDirect(GetOptObjectProperty(data, "history_states"));
-        var result_3 = {
+        var result_4 = {
             change_logs: [],
             history_states: [],
         };
-        // alert(tools.object_to_text(lists.person_states, "json"));
         var statesList_1 = ArrayDirect(GetOptObjectProperty(lists.person_states, "person_state"));
-        map(changeLogsArray, function _3(item) { return result_3.change_logs.push({
+        map(changeLogsArray, function _6(item) { return result_4.change_logs.push({
             date: RValue(item.date),
             org_name: RValue(item.org_name),
             position_name: RValue(item.position_name),
             position_parent_name: RValue(item.position_parent_name),
         }); });
-        map(historyStatesArray, function _4(item) { return result_3.history_states.push({
+        map(historyStatesArray, function _7(item) { return result_4.history_states.push({
             finish_date: RValue(item.finish_date),
             start_date: RValue(item.start_date),
-            state: RValue(GetOptObjectProperty(find(statesList_1, function _5(state) { return RValue(state.id) == RValue(item.state_id); }), "name")),
+            state: RValue(GetOptObjectProperty(find(statesList_1, function _8(state) { return RValue(state.id) == RValue(item.state_id); }), "name")),
         }); });
-        return result_3;
+        return result_4;
     }
     catch (e) {
         err("getCollaboratorData", e);
@@ -140,15 +218,47 @@ function getCollaboratorsBySubdivisionId(subId) {
       FROM collaborators c\
       WHERE c.position_parent_id=" + subId + "\
     ");
-        var result_4 = [];
-        map(deps, function _6(item) { return result_4.push({
+        var result_5 = [];
+        map(deps, function _9(item) { return result_5.push({
             fullname: RValue(item.fullname),
             id: RValue(item.id),
         }); });
-        return result_4;
+        return result_5;
     }
     catch (e) {
         err("getSubdivisionsByQuery", e);
+    }
+}
+function subscribeCurUserToCollaborator(colId) {
+    try {
+        var new_doc = tools.new_doc_by_name("subscription");
+        new_doc.BindToDb(DefaultDb);
+        var new_doc_te = new_doc.TopElem;
+        new_doc_te.document_id = colId;
+        new_doc_te.person_id = curUserId;
+        new_doc.Save();
+    }
+    catch (e) {
+        err("subscribeCurUserToCollaborator", e);
+    }
+}
+function deleteSubscribeCurUserToCollaborator(colId) {
+    try {
+        var subscription = selectOne("\
+      SELECT \
+        s.id \
+      FROM subscriptions s\
+      WHERE s.document_id = " + colId + " AND\
+        s.type = 'document'\
+      ");
+        var subscriptionId = RValue(subscription.id);
+        if (!isNumber(subscriptionId)) {
+            throw new Error("Подписка не найдена");
+        }
+        DeleteDoc(UrlFromDocID(subscriptionId));
+    }
+    catch (e) {
+        err("deleteSubscribeCurUserToCollaborator", e);
     }
 }
 function handler(bodyAny, method) {
@@ -164,28 +274,50 @@ function handler(bodyAny, method) {
     if (method === "getCollaboratorsBySubdivisionId") {
         var body = bodyAny;
         var subdivisionId = OptInt(body.GetOptProperty("subdivisionId"));
-        // const subdivisionId_int = OptInt(subdivisionId_str);
         if (!isNumber(subdivisionId)) {
             err("route_error", "Отсутствует параметр subdivisionId в body");
         }
         response.data = getCollaboratorsBySubdivisionId(subdivisionId);
     }
-    if (method === "getCollaboratorsByQuery") {
+    if (method === "getCollaboratorsByRule") {
         var body = bodyAny;
-        var query = body.GetOptProperty("query");
-        if (!isString(query)) {
-            err("route_error", "Отсутствует параметр query в body");
+        var rule = body.GetOptProperty("rule");
+        if (!isObject(rule)) {
+            err("route_error", "Отсутствует параметр rule в body");
         }
-        response.data = getCollaboratorsByQuery(query);
+        if (!isBoolean(rule.is_subscription)) {
+            err("route_error", "Отсутствует правило is_subscription в rule");
+        }
+        if (rule.is_subscription) {
+            response.data = getCollaboratorsByQueryWithSubscribe(GetOptObjectProperty(rule, "query"), OptInt(GetOptObjectProperty(rule, "position_parent_id")));
+        }
+        else {
+            response.data = getCollaboratorsByQueryWithoutSubscribe(GetOptObjectProperty(rule, "query"), OptInt(GetOptObjectProperty(rule, "position_parent_id")));
+        }
     }
     if (method === "getCollaboratorData") {
         var body = bodyAny;
         var colId = OptInt(body.GetOptProperty("collaboratorId"));
-        // const colId_int = OptInt(colId_str);
         if (!isNumber(colId)) {
             err("route_error", "Отсутствует параметр collaboratorId в body");
         }
         response.data = getCollaboratorData(colId);
+    }
+    if (method === "subscribeCurUserToCollaborator") {
+        var body = bodyAny;
+        var colId = OptInt(body.GetOptProperty("collaboratorId"));
+        if (!isNumber(colId)) {
+            err("route_error", "Отсутствует параметр collaboratorId в body");
+        }
+        response.data = subscribeCurUserToCollaborator(colId);
+    }
+    if (method === "deleteSubscribeCurUserToCollaborator") {
+        var body = bodyAny;
+        var colId = OptInt(body.GetOptProperty("collaboratorId"));
+        if (!isNumber(colId)) {
+            err("route_error", "Отсутствует параметр collaboratorId в body");
+        }
+        response.data = deleteSubscribeCurUserToCollaborator(colId);
     }
     return response;
 }

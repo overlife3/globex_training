@@ -1,17 +1,15 @@
 export const getSubdivisionsByQueryAndChild = (query: string) => `
 WITH subdivision_hierarchy AS (
-    -- Базовый случай: находим все подразделения с указанной подстрокой
     SELECT 
         id,
         name,
         parent_object_id,
         0 as level
     FROM subdivisions 
-    WHERE name LIKE '%${query}%'  -- ЗАМЕНИТЕ на вашу подстроку
+    WHERE name LIKE '%${query}%' 
     
     UNION ALL
-    
-    -- Рекурсивный случай: находим всех потомков
+
     SELECT 
         child.id,
         child.name,

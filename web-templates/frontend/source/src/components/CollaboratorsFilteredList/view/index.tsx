@@ -4,7 +4,7 @@ import type { GetRemoteDataFunc } from "../controller";
 import Loader from "../../ui/Loader";
 import type { Collaborator } from "../../../types";
 import SubdivisionsDropdown from "../../SubdivisionsDropdown";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import Tooltip from "../../ui/Tooltip";
 
 type RenderListFunc = (data: Collaborator[]) => React.ReactNode;
@@ -36,6 +36,11 @@ function FilteredListByQueryView(props: Props) {
     handleIsSubscriptionChange(isSubscription);
   }, []);
 
+  const content = useMemo(
+    () => renderContent(renderList, renderEmpty, data, error, isLoading),
+    [error, data, isLoading, renderList, renderEmpty]
+  );
+
   return (
     <div>
       <div className={styles.input_container}>
@@ -55,7 +60,7 @@ function FilteredListByQueryView(props: Props) {
         <div className={styles.loader_container}>{isLoading && <Loader />}</div>
       </div>
 
-      {renderContent(renderList, renderEmpty, data, error, isLoading)}
+      {content}
     </div>
   );
 }

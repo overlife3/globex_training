@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { HierarchicalItem, RenderRowContentFunc } from "../types";
 import styles from "./style.module.css";
 import clsx from "clsx";
@@ -10,7 +10,7 @@ type Props = {
   renderRowContent: RenderRowContentFunc;
 };
 
-const TreeNode = (props: Props) => {
+const TreeNode = memo((props: Props) => {
   const { item, data, renderRowContent, level = 0 } = props;
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -56,6 +56,6 @@ const TreeNode = (props: Props) => {
       )}
     </div>
   );
-};
+});
 
 export default TreeNode;

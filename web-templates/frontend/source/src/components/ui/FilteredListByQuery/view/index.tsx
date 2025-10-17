@@ -2,6 +2,7 @@ import styles from "./style.module.css";
 import { useFilteredListByQuery } from "../controller";
 import type { GetRemoteDataFunc } from "../controller";
 import Loader from "../../Loader";
+import { useMemo } from "react";
 
 type RenderListFunc<T> = (data: T[]) => React.ReactNode;
 
@@ -22,6 +23,11 @@ function FilteredListByQueryView<T>(props: Props<T>) {
   const isLoading = model.isLoading;
   const error = model.error;
 
+  const content = useMemo(
+    () => renderContent(renderList, renderEmpty, data, error, isLoading),
+    [renderList, renderEmpty, data, error, isLoading]
+  );
+
   return (
     <div>
       <div className={styles.input_container}>
@@ -34,7 +40,7 @@ function FilteredListByQueryView<T>(props: Props<T>) {
         <div className={styles.loader_container}>{isLoading && <Loader />}</div>
       </div>
 
-      {renderContent(renderList, renderEmpty, data, error, isLoading)}
+      {content}
     </div>
   );
 }

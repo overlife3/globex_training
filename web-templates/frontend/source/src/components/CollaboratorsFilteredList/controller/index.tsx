@@ -10,7 +10,7 @@ export const useFilteredList = (getRemoteData: GetRemoteDataFunc) => {
   const [model] = useState(new FilteredListModel());
   const [, setRerender] = useState({});
 
-  const update = () => setRerender({});
+  const update = useCallback(() => setRerender({}), []);
   const rule = model.getRule();
   let newIsSubscription: null | boolean = null;
 
@@ -33,33 +33,25 @@ export const useFilteredList = (getRemoteData: GetRemoteDataFunc) => {
     }
   }, []);
 
-  const changeQuery = (value: string) => {
-    model.setRule({ ...rule, query: value });
+  function changeRule<T extends keyof Rule>(rule_name: T, value: Rule[T]) {
+    model.setRule({ ...rule, [rule_name]: value });
     update();
-  };
-  const changeParentId = (value: string | null) => {
-    model.setRule({ ...rule, position_parent_id: value || undefined });
-    update();
-  };
-  const changeIsSubscription = (value: boolean) => {
-    model.setRule({ ...rule, is_subscription: value });
-    update();
-  };
+  }
 
   const debouncedLoadData = useDebounce(loadData, 300);
 
   const handleInputChange = (value: string) => {
-    changeQuery(value);
+    changeRule("query", value);
     debouncedLoadData({ ...rule, query: value });
   };
 
   const handleParentIdChange = (value: string | null) => {
-    changeParentId(value);
+    changeRule("position_parent_id", value || undefined);
     debouncedLoadData({ ...rule, position_parent_id: value || undefined });
   };
 
   const handleIsSubscriptionChange = (value: boolean) => {
-    changeIsSubscription(value);
+    changeRule("is_subscription", value);
     newIsSubscription = value;
     debouncedLoadData({ ...rule, is_subscription: value });
   };

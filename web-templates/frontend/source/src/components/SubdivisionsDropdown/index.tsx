@@ -31,7 +31,6 @@ const SubdivisionsDropdown = (props: Props) => {
         setState((prev) => ({ ...prev, data }));
       } catch (e) {
         console.error(e);
-        alert("Произошла ошибка при получении подразделений");
         setState((prev) => ({ ...prev, isError: true }));
       } finally {
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -51,6 +50,7 @@ const SubdivisionsDropdown = (props: Props) => {
       onSelect={handleSelect}
       isLoading={state.isLoading}
       placeholder="Подразделение"
+      isError={state.isError}
     />
   );
 };

@@ -19,18 +19,16 @@ function selectOne(query, defaultObj) {
 }
 getSubdivisionsByQueryAndChild = function _1(query) { return "\
 WITH subdivision_hierarchy AS (\
-    -- Базовый случай: находим все подразделения с указанной подстрокой\
     SELECT \
         id,\
         name,\
         parent_object_id,\
         0 as level\
     FROM subdivisions \
-    WHERE name LIKE '%" + query + "%'  -- ЗАМЕНИТЕ на вашу подстроку\
+    WHERE name LIKE '%" + query + "%' \
     \
     UNION ALL\
-    \
-    -- Рекурсивный случай: находим всех потомков\
+\
     SELECT \
         child.id,\
         child.name,\
@@ -143,7 +141,7 @@ function getCollaboratorsByQueryWithoutSubscribe(query, positionParentId) {
         c.id,\
         c.fullname\
       FROM collaborators c\
-      LEFT JOIN subscriptions s ON c.id = s.document_id\
+        LEFT JOIN subscriptions s ON c.id = s.document_id\
       WHERE\
         " + str + "\
         s.document_id IS NULL\
@@ -168,8 +166,8 @@ function getCollaboratorsByQueryWithSubscribe(query, positionParentId) {
         c.id,\
         c.fullname\
       FROM collaborators c\
-      INNER JOIN subscriptions s ON c.id = s.document_id\
-      " + str + "\
+        INNER JOIN subscriptions s ON c.id = s.document_id\
+        " + str + "\
     ");
         var result_3 = [];
         map(deps, function _5(item) { return result_3.push({

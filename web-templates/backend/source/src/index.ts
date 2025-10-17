@@ -149,7 +149,7 @@ function getCollaboratorsByQueryWithoutSubscribe(
         c.id,
         c.fullname
       FROM collaborators c
-      LEFT JOIN subscriptions s ON c.id = s.document_id
+        LEFT JOIN subscriptions s ON c.id = s.document_id
       WHERE
         ${str}
         s.document_id IS NULL
@@ -184,8 +184,8 @@ function getCollaboratorsByQueryWithSubscribe(
         c.id,
         c.fullname
       FROM collaborators c
-      INNER JOIN subscriptions s ON c.id = s.document_id
-      ${str}
+        INNER JOIN subscriptions s ON c.id = s.document_id
+        ${str}
     `);
 
     const result: { id: number; fullname: string }[] = [];

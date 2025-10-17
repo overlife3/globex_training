@@ -22,6 +22,7 @@ interface Props {
   placeholder?: string;
   disabled?: boolean;
   isLoading?: boolean;
+  isError?: boolean;
 }
 
 const Dropdown = ({
@@ -30,6 +31,7 @@ const Dropdown = ({
   placeholder = "Выберите вариант",
   disabled = false,
   isLoading,
+  isError,
 }: Props) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const activeOption = useRef<Option | null>(null);
@@ -81,22 +83,28 @@ const Dropdown = ({
               }}
               {...getFloatingProps()}
             >
-              <button
-                className={clsx(styles.option)}
-                onClick={() => handleSelect(null)}
-              >
-                Нет
-              </button>
-              {options.map((option, index) => (
-                <button
-                  className={clsx(styles.option)}
-                  key={index}
-                  onClick={() => handleSelect(option)}
-                  type="button"
-                >
-                  {option.label}
-                </button>
-              ))}
+              {isError ? (
+                <p>Произошла ошибка</p>
+              ) : (
+                <>
+                  <button
+                    className={clsx(styles.option)}
+                    onClick={() => handleSelect(null)}
+                  >
+                    Нет
+                  </button>
+                  {options.map((option) => (
+                    <button
+                      className={clsx(styles.option)}
+                      key={option.id}
+                      onClick={() => handleSelect(option)}
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </FloatingFocusManager>

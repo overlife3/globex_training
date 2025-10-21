@@ -124,35 +124,10 @@ function getExistCol(data: {
     `
         SELECT id
         FROM collaborators
-        WHERE name='${data.name}'
+        WHERE fullname='${data.name}'
     `,
     null
   );
-}
-
-// Функция получения Имени Фамилии Отчества из строки
-function getPartsName(name: string) {
-  try {
-    const partsArray = String(name).split(" ");
-
-    if (ArrayCount(partsArray) == 3) {
-      return {
-        lastname: partsArray[0],
-        firstname: partsArray[1],
-        middlename: partsArray[2],
-      };
-    } else if (ArrayCount(partsArray) == 2) {
-      return {
-        lastname: partsArray[0],
-        firstname: partsArray[1],
-        middlename: null,
-      };
-    } else {
-      throw new Error("Отсутствуют имя или фамилия.");
-    }
-  } catch (err) {
-    HttpError("getPartsName", err);
-  }
 }
 
 // создание Сотрудника
@@ -164,11 +139,7 @@ function createCol(data: {
   const new_doc = tools.new_doc_by_name("collaborator");
   new_doc.BindToDb(DefaultDb);
   const new_doc_te: any = new_doc.TopElem;
-  new_doc_te.lastname = getPartsName(data.name).lastname;
-  new_doc_te.firstname = getPartsName(data.name).firstname;
-  if (getPartsName(data.name).middlename != null) {
-    new_doc_te.middlename = getPartsName(data.name).middlename;
-  }
+  new_doc_te.fullname = data.name;
   new_doc_te.position_id = data.position_id;
   new_doc_te.position_name = data.position_name;
   new_doc.Save();

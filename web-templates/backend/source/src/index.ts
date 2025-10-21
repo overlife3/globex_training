@@ -7,6 +7,9 @@ import { getSubdivisionsByQueryAndChild } from "./sql";
 import { selectAll, selectOne } from "./utils/query";
 import { isBoolean, isNumber, isObject, isString } from "./utils/type";
 
+function func() {
+  return "str".split("");
+}
 /* --- types --- */
 interface IRequestBodyString {
   method?: string;

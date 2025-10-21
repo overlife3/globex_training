@@ -53,6 +53,7 @@ function log(message, type) {
     var log = "[" + type + "][" + logConfig.type + "][" + logConfig.objectId + "]: " + message + "";
     LogEvent(logConfig.code, log);
 }
+DEV_MODE = tools_web.is_true(customWebTemplate.access.enable_anonymous_access);
 function map(array, callback) {
     var result = [];
     for (i = 0; i < ArrayCount(array); i++) {
@@ -91,6 +92,9 @@ Request.RespContentType = "application/json";
 Request.AddRespHeader("Content-Security-Policy", "frame-ancestors 'self'");
 Request.AddRespHeader("X-XSS-Protection", "1");
 Request.AddRespHeader("X-Frame-Options", "SAMEORIGIN");
+function func() {
+    return "str".split("");
+}
 /* --- utils --- */
 function getParam(name, defaultVal) {
     if (defaultVal === void 0) { defaultVal = "undefined"; }

@@ -26,7 +26,7 @@ function getJSONData() {
         }
         if (fileUrl != null) {
             try {
-                return tools.read_object(LoadFileData(UrlToFilePath("x-local://" + fileUrl + "")));
+                return tools.read_object(LoadFileData(UrlToFilePath("x-local:/" + fileUrl + "")));
             }
             catch (e) {
                 alert("ОШИБКА: файл не найден либо не указан. " + e);

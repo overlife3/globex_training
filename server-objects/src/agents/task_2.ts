@@ -42,9 +42,7 @@ function getJSONData() {
     }
     if (fileUrl != null) {
       try {
-        return tools.read_object(
-          LoadFileData(UrlToFilePath(`x-local:/${fileUrl}`))
-        );
+        return tools.read_object(LoadFileData(UrlToFilePath(fileUrl)));
       } catch (e) {
         alert("ОШИБКА: файл не найден либо не указан. " + e);
       }
@@ -89,7 +87,7 @@ const GLOBAL = {
 const logConfig = {
   code: "globex_log",
   type: "AGENT",
-  agentId: "",
+  agentId: "7211871962498852513",
 };
 
 EnableLog(logConfig.code, GLOBAL.IS_DEBUG);
@@ -119,10 +117,10 @@ function log(message: string, type?: string) {
   }
 }
 
-log("--- Начало. Агент {название агента} ---");
+log('--- Начало. Агент "Добавление разделов портала по JSON файлу" ---');
 
 main();
 
-log("--- Конец. Агент {название агента} ---");
+log('--- Конец. Агент "Добавление разделов портала по JSON файлу" ---');
 
 export {};

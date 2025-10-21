@@ -253,7 +253,7 @@ const GLOBAL = {
 const logConfig = {
   code: "globex_log",
   type: "AGENT",
-  agentId: "",
+  agentId: "7212848762131969513",
 };
 
 EnableLog(logConfig.code, GLOBAL.IS_DEBUG);
@@ -283,10 +283,10 @@ function log(message: string, type?: string) {
   }
 }
 
-log("--- Начало. Агент {название агента} ---");
+log('--- Начало. "Агент Получение и обработка данных из excel файла" ---');
 
 main();
 
-log("--- Конец. Агент {название агента} ---");
+log('--- Конец. "Агент Получение и обработка данных из excel файла" ---');
 
 export {};

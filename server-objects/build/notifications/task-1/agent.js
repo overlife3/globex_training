@@ -15,50 +15,35 @@ function HttpError(source, error) {
     throw new Error(source + " -> " + error);
 }
 /* --- logic --- */
-function getJSONData() {
-    try {
-        var fileUrl = null;
-        try {
-            fileUrl = Screen.AskFileOpen("", "Выбери файл&#09;*.*");
-        }
-        catch (err) {
-            fileUrl = Param.SERVER_FILE_URL;
-        }
-        if (fileUrl != null) {
-            try {
-                return tools.read_object(LoadFileData(UrlToFilePath(fileUrl)));
-            }
-            catch (e) {
-                alert("ОШИБКА: файл не найден либо не указан. " + e);
-            }
-        }
+function getNewCollaborators() {
+    return selectAll("\
+        SELECT * \
+        FROM collaborators\
+        WHERE hire_date \
+            BETWEEN DATEADD(DAY, -1, CAST(GETDATE() AS DATE)) \
+            AND CAST(GETDATE() AS DATE)\
+        ");
+}
+function createNotification(colId, headOfficeId) {
+    var isNotificationSended = tools.create_notification("inauguration", Int(colId), UrlAppendPath(global_settings.settings.portal_base_url, Param.IMAGE_PATH), Int(headOfficeId));
+    if (isNotificationSended) {
+        alert("Сообщение сформировано успешно");
     }
-    catch (e) {
-        throw Error("getJSONData -> " + e.message);
+    else {
+        alert("Сообщение не сформировано!");
     }
 }
-function createDocumentDoc() {
-    try {
-        var data = getJSONData();
-        for (i = 0; i < data.length; i++) {
-            new_doc = tools.new_doc_by_name("document");
-            new_doc.BindToDb(DefaultDb);
-            new_doc_te = new_doc.TopElem;
-            new_doc_te.name = data[i].name;
-            new_doc_te.comment = data[i].description;
-            new_doc_te.user_group_id = data[i].group_access_id;
-            new_doc_te.create_date = Date(data[i].date);
-            new_doc.Save();
-        }
-    }
-    catch (err) {
-        HttpError("createDocumentDoc", err);
+function sendNotifications(cols, headOfficeId) {
+    for (i = 0; i < ArrayCount(cols); i++) {
+        // const colDoc = tools.open_doc()
+        createNotification(cols[i].id, headOfficeId); // лучше сделать связь между сотрудником и руководителем
     }
 }
 /* --- start point --- */
 function main() {
     try {
-        createDocumentDoc();
+        var cols = getNewCollaborators();
+        sendNotifications(cols, Param.HEAD_OFFICE_ID);
     }
     catch (err) {
         log("Выполнение прервано из-за ошибки: main -> " + err, "error");
@@ -71,7 +56,7 @@ var GLOBAL = {
 var logConfig = {
     code: "globex_log",
     type: "AGENT",
-    agentId: "7211871962498852513",
+    agentId: "",
 };
 EnableLog(logConfig.code, GLOBAL.IS_DEBUG);
 /**
@@ -94,6 +79,6 @@ function log(message, type) {
         alert(log);
     }
 }
-log('--- Начало. Агент "Добавление разделов портала по JSON файлу" ---');
+log("--- Начало. Агент {название агента} ---");
 main();
-log('--- Конец. Агент "Добавление разделов портала по JSON файлу" ---');
+log("--- Конец. Агент {название агента} ---");

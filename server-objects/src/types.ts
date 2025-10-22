@@ -1,5 +1,9 @@
 export interface ICollaborator {
   id: number;
-  name: string;
-  password: string;
+  fullname: string;
+}
+
+export interface IFuncManager {
+  person_id: number;
+  person_fullname: number;
 }

@@ -1,13 +1,11 @@
-<% 
-sSex = objDoc.sex == "w" ? "ая" : "ый"; sAddressing = 'Уважаем' + sSex; 
-var manager = ArrayOptFirstElem(GetOptObjectProperty(objDoc,"func_managers"), undefined);
-%>
+<% sSex = objDoc.sex == "w" ? "ая" : "ый"; sAddressing = 'Уважаем' + sSex; %>
 <img src="<%=Text%>" />
 <h3>
   <%=sAddressing%> <%=objDoc.fullname%>!
 </h3>
 <p>
   Поздравляем со вступлением в должность<% 
+  var manager = ArrayOptFirstElem(GetOptObjectProperty(objDoc,"func_managers"), undefined)
   if (manager != undefined) 
   { 
   %>, твой руководитель - <%=manager.person_fullname%> расскажет тебе что к чему 

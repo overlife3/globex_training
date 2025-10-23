@@ -1,22 +1,17 @@
-<% 
-sSex = objDoc.sex == "w" ? "ая" : "ый"; sAddressing = 'Уважаем' + sSex; 
-var manager = ArrayOptFirstElem(GetOptObjectProperty(objDoc,"func_managers"), undefined);
-%>
 <img src="<%=Text%>" />
 <h3>
-  <%=sAddressing%> <%=objDoc.fullname%>!
+  <% sSex = objDoc.sex == "w" ? "ая" : "ый"; sAddressing = 'Уважаем' + sSex; %>
+  <%=sAddressing%> <%=objDoc.lastname%> <%=objDoc.firstname%>
+  <%=objDoc.middlename%>!
 </h3>
 <p>
-  Поздравляем со вступлением в должность<% 
-  if (manager != undefined) 
-  { 
-  %>, твой руководитель - <%=manager.person_fullname%> расскажет тебе что к чему 
-  <% } %>
+  Поздравляем со вступлением в должность, твой руководитель -
+  <%=objDoc.func_managers[0].person_fullname%> расскажет тебе что к чему
 </p>
 
 <% if (objDoc.org_id == objDocSec.id) { %>
 <p>
-  Ссылка на анкету -
+  Ссыдка на анкету -
   <a
     href="<%=UrlAppendPath( global_settings.settings.portal_base_url, tools_web.get_mode_clean_url( objDoc.Name, objDocID ) )%>"
   >

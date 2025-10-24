@@ -36,11 +36,7 @@ function getNewCollaborators(): ICollaborator[] {
         `);
 }
 
-function createNotificationToCollaborator(
-  colId: number,
-  headOfficeId: number,
-  col_te: XmlTopElem
-) {
+function createNotificationToCollaborator(colId: number, headOfficeId: number) {
   try {
     const isNotificationSended = tools.create_notification(
       "inauguration",
@@ -49,8 +45,7 @@ function createNotificationToCollaborator(
         global_settings.settings.portal_base_url,
         Param.IMAGE_PATH as string
       ),
-      OptInt(headOfficeId),
-      col_te
+      OptInt(headOfficeId)
     );
     if (isNotificationSended) {
       alert("Сообщение сформировано успешно");
@@ -87,7 +82,8 @@ function sendNotificationToManagers(
   colsFullNameList: string[]
 ) {
   try {
-    for (let i = 0; i < ArrayCount(managersId); i++) {
+    const managersIdCount = ArrayCount(managersId);
+    for (let i = 0; i < managersIdCount; i++) {
       createNotificationToManager(managersId[i], colsFullNameList[i]);
     }
   } catch (err) {
@@ -123,12 +119,12 @@ function main() {
     const managersId: number[] = [];
     const colsFullnameList: string[] = [];
 
-    for (let i = 0; i < ArrayCount(cols); i++) {
+    const colsCount = ArrayCount(cols);
+    for (let i = 0; i < colsCount; i++) {
       const doc_te = tools.open_doc(cols[i].id).TopElem;
       createNotificationToCollaborator(
         cols[i].id,
-        Param.HEAD_OFFICE_ID as number,
-        doc_te
+        Param.HEAD_OFFICE_ID as number
       );
 
       const managers = GetOptObjectProperty(doc_te, "func_managers") as
@@ -194,10 +190,14 @@ function log(message: string, type?: string) {
   }
 }
 
-log('--- Начало. Агент "Отправка уведомлений" ---');
+log(
+  '--- Начало. Агент "GlobexIT. Адаптация. #57491 Агент «Отправка уведомлений»" ---'
+);
 
 main();
 
-log('--- Конец. Агент "Отправка уведомлений" ---');
+log(
+  '--- Конец. Агент "GlobexIT. Адаптация. #57491 Агент «Отправка уведомлений»" ---'
+);
 
 export {};

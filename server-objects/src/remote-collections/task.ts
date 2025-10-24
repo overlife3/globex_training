@@ -11,23 +11,17 @@ try {
 
   const resArray = [];
 
-  for (let i = 0; i < ArrayCount(adaptationArr); i++) {
-    let isAllTasksPassed = true;
-
+  const adaptationArrCount = ArrayCount(adaptationArr);
+  for (let i = 0; i < adaptationArrCount; i++) {
     const doc_te = tools.open_doc(adaptationArr[i].id).TopElem;
     const _tasks = GetOptObjectProperty(doc_te, "tasks") as
       | { status: string }[]
       | undefined;
-    if (_tasks != undefined) {
-      for (let j = 0; j < ArrayCount(_tasks); j++) {
-        if (_tasks[j].status != "passed") {
-          isAllTasksPassed = false;
-          break;
-        }
-      }
-    }
-    if (isAllTasksPassed) {
-      resArray.push(adaptationArr[i]);
+    if (
+      _tasks != undefined ||
+      ArrayOptFind(_tasks, "This.status == 'passed'") != undefined
+    ) {
+      resArray.push(adaptationArr);
     }
   }
   const RESULT = resArray; // const потом убрать
